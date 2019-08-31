@@ -5,6 +5,9 @@ from sklearn.model_selection import train_test_split, cross_val_score
 from sklearn import linear_model
 from sklearn.metrics import r2_score , mean_absolute_error
 from sklearn.neighbors import KNeighborsRegressor
+from sklearn.svm import LinearSVR
+from sklearn.tree import DecisionTreeRegressor
+from sklearn.neural_network import MLPRegressor
 
 def normalizar(coluna):
 	max = coluna.max()
@@ -24,19 +27,19 @@ testY = pd.read_csv('sample_submission.csv')
 
 testY = testY['SalePrice']
 
-rg = rg.drop(columns='Id')
-testX = test.drop(columns='Id')
+rg = rg.drop(columns=['Id','MiscFeature','MiscVal','PoolArea','PoolQC','ScreenPorch','3SsnPorch','Alley','EnclosedPorch','Fence'])
+testX = test.drop(columns=['Id','MiscFeature','MiscVal','PoolArea','PoolQC','ScreenPorch','3SsnPorch','Alley','EnclosedPorch','Fence'])
 
 rgX = rg.drop(columns='SalePrice')
 rgY = rg['SalePrice']
 
-rgX['PoolQC'] = rgX['PoolQC'].fillna(0)
+
 rgX['GarageYrBlt'] = rgX['GarageYrBlt'].interpolate(method= 'pad')
 rgX['LotFrontage'] = rgX['LotFrontage'].fillna(0)
 
 rgX = rgX.fillna('NaN')
 
-testX['PoolQC'] = testX['PoolQC'].fillna(0)
+
 testX['GarageYrBlt'] = testX['GarageYrBlt'].interpolate(method= 'pad')
 testX['LotFrontage'] = testX['LotFrontage'].fillna(0)
 
@@ -76,7 +79,7 @@ print("Linear Score:", r2_score(testY, LinearPredict), mean_absolute_error(testY
 
 #______________________________________________________________________________
 
-Neighbors = KNeighborsRegressor()
+Neighbors = KNeighborsRegressor(n_neighbors = 1115, weights = 'distance')
 
 Neighbors.fit(rgX , rgY)
 
@@ -86,5 +89,30 @@ print("KNeighbors Score:", r2_score(testY, NeighborsPredict) , mean_absolute_err
 
 #______________________________________________________________________________
 
-for i in range(len(testY)):
-	print(i ,testY[i] , NeighborsPredict[i])
+SVR = LinearSVR(epsilon = 1000)
+
+SVR.fit(rgX , rgY)
+
+SVRPredict = SVR.predict(testX)
+
+print("SVR Score:", r2_score(testY, SVRPredict), mean_absolute_error(testY, SVRPredict))
+
+#______________________________________________________________________________
+
+Tree = DecisionTreeRegressor(max_leaf_nodes = 2, criterion = 'mae')
+
+Tree.fit(rgX, rgY)
+
+TreePredict = Tree.predict(testX)
+
+print('Tree Score:', r2_score(testY, TreePredict), mean_absolute_error(testY, TreePredict))
+
+#_______________________________________________________________________________
+
+Rede = MLPRegressor(learning_rate_init = 0.03,max_iter = 70, batch_size = 100)
+
+Rede.fit(rgX, rgY)
+
+RedePredict = Rede.predict(testX)
+
+print('Rede Neural Score:', r2_score(testY, RedePredict), mean_absolute_error(testY, RedePredict))
