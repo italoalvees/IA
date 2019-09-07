@@ -7,11 +7,15 @@ from sklearn.model_selection import train_test_split, cross_val_score
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.metrics import confusion_matrix, classification_report,accuracy_score
 from sklearn.neighbors import KNeighborsClassifier
+from imblearn.under_sampling import RandomUnderSampler
+from collections import Counter
 
+le = preprocessing.LabelEncoder()
 
+finaldata = pd.read_csv('train.csv')
 
-finaldata = pd.read_csv('finalData.csv')
-
+finaldata = finaldata.drop(columns = ['PassengerId','Name','Ticket','Cabin','Embarked'])
+finaldata['Sex'] = le.fit_transform(finaldata['Sex'])
 
 imp = IterativeImputer()
 
@@ -54,6 +58,13 @@ X_Excluded = excluded.drop(columns='Survived')
 X_Excluded = Normalizer().fit_transform(X_Excluded)
 
 Y_Excluded = excluded['Survived']
+
+print(Counter(Y_Excluded))
+
+rus = RandomUnderSampler()
+X_Excluded, Y_Excluded = rus.fit_resample(X_Excluded, Y_Excluded)
+
+print(Counter(Y_Excluded))
 
 #Divisão da amostra para teste e treino
 X_trainExcluded, X_testExcluded,Y_trainExcluded, Y_testExcluded = train_test_split(X_Excluded,Y_Excluded, test_size=0.2)

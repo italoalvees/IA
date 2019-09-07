@@ -11,10 +11,13 @@ le = preprocessing.LabelEncoder()
 data = pd.read_csv('finaldata.csv')
 #print(data)
 
-for i in data.columns:
-	data[i] = le.fit_transform(data[i])
+data['category'] = le.fit_transform(data['category'])
 
-#data = Normalizer().fit_transform(data)
+# d = Normalizer().fit_transform(data)
+
+# print(data.columns)
+
+# data = pd.DataFrame(d, columns = data.columns)
 
 times = ['Arsenal:', "Bournemouth:", 'Brighton' ,'Burnley:', 'Cardiff:', 'Chelsea:', 'Crystal Palace:', 'Everton:', "Fulham:", 'Huddersfield:', 'Leicester:', 'Liverpool:', 'Manchester City:', 'Manchester United:', 'NewCastle United:', 'Southampton:', 'Tottenham:', 'Watford:', 'West Ham:', 'Wolverhampton:' ]
 

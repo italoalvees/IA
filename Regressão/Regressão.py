@@ -9,59 +9,40 @@ from sklearn.svm import LinearSVR
 from sklearn.tree import DecisionTreeRegressor
 from sklearn.neural_network import MLPRegressor
 
-def normalizar(coluna):
-	max = coluna.max()
-	min = coluna.min()
-	divisor = max 
-
-	for i in range(len(coluna)):
-		coluna.at[i] = coluna.at[i]/divisor
-
-	return coluna
-
 
 
 rg = pd.read_csv('train.csv')
-test = pd.read_csv('test.csv')
-testY = pd.read_csv('sample_submission.csv')
 
-testY = testY['SalePrice']
-
-rg = rg.drop(columns=['Id','MiscFeature','MiscVal','PoolArea','PoolQC','ScreenPorch','3SsnPorch','Alley','EnclosedPorch','Fence'])
-testX = test.drop(columns=['Id','MiscFeature','MiscVal','PoolArea','PoolQC','ScreenPorch','3SsnPorch','Alley','EnclosedPorch','Fence'])
-
-rgX = rg.drop(columns='SalePrice')
 rgY = rg['SalePrice']
 
+rg = rg.drop(columns=['Id','MSSubClass','LotArea', 'OverallCond','BsmtFinSF2','BsmtUnfSF',"2ndFlrSF", 'LowQualFinSF', 'BsmtFullBath', 'BsmtHalfBath','HalfBath', 'BedroomAbvGr', 'KitchenAbvGr','WoodDeckSF','OpenPorchSF', 'EnclosedPorch', '3SsnPorch', 'ScreenPorch', 'PoolArea', 'MiscVal', 'MoSold', 'YrSold'])
+
+rgX = rg.drop(columns='SalePrice')
 
 rgX['GarageYrBlt'] = rgX['GarageYrBlt'].interpolate(method= 'pad')
 rgX['LotFrontage'] = rgX['LotFrontage'].fillna(0)
 
 rgX = rgX.fillna('NaN')
 
-
-testX['GarageYrBlt'] = testX['GarageYrBlt'].interpolate(method= 'pad')
-testX['LotFrontage'] = testX['LotFrontage'].fillna(0)
-
-testX = testX.fillna('NaN')
-
 le = preprocessing.LabelEncoder()
 
 for i in rgX.columns:
-	rgX[i] = le.fit_transform(rgX[i].astype(str))
-	testX[i] = le.fit_transform(testX[i].astype(str))
-
+	if rgX[i].dtypes == 'object':
+		rgX[i] = le.fit_transform(rgX[i].astype(str))
+	
 rgX = Normalizer().fit_transform(rgX)
-testX = Normalizer().fit_transform(testX)
-# rgY = normalizar(rgY)
-# testY = normalizar(testY)
+
+
+print(rgY.max())
+
+trainX, testX, trainY, testY = train_test_split(rgX,rgY, test_size=0.2)
 
 
 #_____________________________________________________________________________
 
 Bayes = linear_model.BayesianRidge()
 
-Bayes.fit(rgX , rgY)
+Bayes.fit(trainX, trainY)
 
 BayesPredict = Bayes.predict(testX)
 
@@ -71,7 +52,7 @@ print("Bayes Score:" , r2_score(testY, BayesPredict), mean_absolute_error(testY,
 
 Linear = linear_model.LinearRegression()
 
-Linear.fit(rgX , rgY)
+Linear.fit(trainX, trainY)
 
 LinearPredict = Linear.predict(testX)
 
@@ -79,9 +60,9 @@ print("Linear Score:", r2_score(testY, LinearPredict), mean_absolute_error(testY
 
 #______________________________________________________________________________
 
-Neighbors = KNeighborsRegressor(n_neighbors = 1115, weights = 'distance')
+Neighbors = KNeighborsRegressor(n_neighbors = 5, weights = 'distance')
 
-Neighbors.fit(rgX , rgY)
+Neighbors.fit(trainX, trainY)
 
 NeighborsPredict = Neighbors.predict(testX)
 
@@ -89,19 +70,9 @@ print("KNeighbors Score:", r2_score(testY, NeighborsPredict) , mean_absolute_err
 
 #______________________________________________________________________________
 
-SVR = LinearSVR(epsilon = 1000)
+Tree = DecisionTreeRegressor(max_depth = 7)
 
-SVR.fit(rgX , rgY)
-
-SVRPredict = SVR.predict(testX)
-
-print("SVR Score:", r2_score(testY, SVRPredict), mean_absolute_error(testY, SVRPredict))
-
-#______________________________________________________________________________
-
-Tree = DecisionTreeRegressor(max_leaf_nodes = 2, criterion = 'mae')
-
-Tree.fit(rgX, rgY)
+Tree.fit(trainX, trainY)
 
 TreePredict = Tree.predict(testX)
 
@@ -109,9 +80,9 @@ print('Tree Score:', r2_score(testY, TreePredict), mean_absolute_error(testY, Tr
 
 #_______________________________________________________________________________
 
-Rede = MLPRegressor(learning_rate_init = 0.03,max_iter = 70, batch_size = 100)
+Rede = MLPRegressor(learning_rate_init = 0.02,max_iter = 1000, batch_size = 100)
 
-Rede.fit(rgX, rgY)
+Rede.fit(trainX, trainY)
 
 RedePredict = Rede.predict(testX)
 
